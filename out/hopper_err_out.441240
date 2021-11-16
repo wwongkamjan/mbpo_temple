@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "main_mbpo.py", line 4, in <module>
-    import gym
-ImportError: No module named gym
-srun: error: cml04: task 0: Exited with exit code 1
