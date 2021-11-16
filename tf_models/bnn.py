@@ -10,7 +10,6 @@ from collections import OrderedDict
 
 import tensorflow.compat.v1 as tf
 import numpy as np
-from tqdm import trange
 from scipy.io import savemat, loadmat
 
 from tf_models.utils import get_required_argument, TensorStandardScaler
@@ -349,9 +348,6 @@ class BNN:
             epoch_iter = range(max_epochs)
         else:
             epoch_iter = itertools.count()
-        # else:
-        #     epoch_range = trange(epochs, unit="epoch(s)", desc="Network training")
-        # trainable_vars = [v for v in tf.trainable_variables()]
         t0 = time.time()
         grad_updates = 0
         for epoch in epoch_iter:
