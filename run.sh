@@ -9,7 +9,7 @@
 #SBATCH --account=furongh
 #SBATCH --mail-user=wwongkam@terpmail.umd.edu
 #SBATCH --mail-type=ALL
-module add cuda/10.2.89
+module add cuda/11.1.1
 module load cudnn/v8.2.1
 
 srun bash -c "hostname; python3 main_mbpo.py --env_name 'Hopper-v2' --num_epoch 100 --temple True --model_type 'pytorch'"
