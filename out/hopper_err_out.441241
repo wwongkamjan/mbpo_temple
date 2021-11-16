@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "main_mbpo.py", line 20, in <module>
+    from tf_models.constructor import construct_model, format_samples_for_training
+  File "/nfshomes/wwongkam/cont_temple/mbpo_temple/tf_models/constructor.py", line 2, in <module>
+    import tensorflow.compat.v1 as tf
+ModuleNotFoundError: No module named 'tensorflow'
+srun: error: cml04: task 0: Exited with exit code 1
