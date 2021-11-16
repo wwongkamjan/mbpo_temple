@@ -11,7 +11,7 @@ import logging
 import os
 import os.path as osp
 import json
-
+from .kmeans import K_Means
 from sac.replay_memory import ReplayMemory
 from sac.sac import SAC
 from model import EnsembleDynamicsModel
@@ -101,15 +101,18 @@ def readParser():
 
     parser.add_argument('--exp_log_name', default='exp_walker_0.txt')
     parser.add_argument('--exploration', type=bool, default=False)
-
+    parser.add_argument('--temple',type=bool, default=False)
+    parser.add_argument('--cl',type=bool, default=False)
+    parser.add_argument('--knum', type=int, default=5)
     return parser.parse_args()
 
 
-def train(args, env_sampler, env_sampler_test, predict_env, agent, env_pool, model_pool, logger):
+def train(args, env_sampler, env_sampler_test, predict_env, agent, env_pool, model_pool, logger, clf, clf_r):
     total_step = 0
     reward_sum = 0
     rollout_length = 1
     exploration_before_start(args, env_sampler, env_pool, agent)
+    fitted = False
 
     for epoch_step in range(args.num_epoch):
         start_step = total_step
@@ -121,7 +124,8 @@ def train(args, env_sampler, env_sampler_test, predict_env, agent, env_pool, mod
                 break
 
             if cur_step > 0 and cur_step % args.model_train_freq == 0 and args.real_ratio < 1.0:
-                train_predict_model(args, env_pool, predict_env)
+                train_predict_model(args, env_pool, predict_env, clf, clf_r, fitted)
+                fitted = True
 
                 new_rollout_length = set_rollout_length(args, epoch_step)
                 if rollout_length != new_rollout_length:
@@ -169,12 +173,19 @@ def set_rollout_length(args, epoch_step):
     return int(rollout_length)
 
 
-def train_predict_model(args, env_pool, predict_env):
+def train_predict_model(args, env_pool, predict_env, clf, clf_r,fitted):
+    if args.cl:
+        state, action, reward, next_state, done = env_pool.sample(len(env_pool))
+    else:
+        state, action, reward, next_state, done = env_pool.sample(len(env_pool))
     # Get all samples from environment
-    state, action, reward, next_state, done = env_pool.sample(len(env_pool))
     delta_state = next_state - state
     inputs = np.concatenate((state, action), axis=-1)
-    labels = np.concatenate((np.reshape(reward, (reward.shape[0], -1)), delta_state), axis=-1)
+    if args.temple:
+        centered_delta, centered_r = fit_kmeans(delta_state, reward, clf, clf_r , fitted)
+        labels = np.concatenate((np.reshape(centered_r, (centered_r.shape[0], -1)), centered_delta), axis=-1)
+    else:
+        labels = np.concatenate((np.reshape(reward, (reward.shape[0], -1)), delta_state), axis=-1)
 
     predict_env.model.train(inputs, labels, batch_size=256, holdout_ratio=0.2)
 
@@ -236,6 +247,35 @@ def train_policy_repeats(args, total_step, train_step, cur_step, env_pool, model
 
     return args.num_train_repeat
 
+def fit_kmeans(delta, rewards, clf, clf_r, fitted):
+    rewards = np.array([rewards]).transpose()
+    if not fitted:
+        clf.fit(delta)
+        clf_r.fit(rewards)
+    else:
+        clf.update(delta, 0.1)
+        clf_r.update(rewards, 0.1)
+
+    return pred_kmeans(delta, rewards)
+
+
+def pred_kmeans(delta, rewards, clf, clf_r):
+
+    labels = clf.predict(delta)
+    centered_delta = []
+    for l in labels:
+        centered_delta.append(clf.centroids[l])
+    centered_delta = np.array(centered_delta)
+
+    labels_r = clf_r.predict(rewards)
+    centered_r = []
+    for l in labels_r:
+        centered_r.append(clf_r.centroids[l])
+    centered_r = np.array(centered_r)
+
+    return centered_delta, centered_r
+
+
 
 from gym.spaces import Box
 
@@ -268,7 +308,8 @@ def main(args=None):
     # Initial environment
     env = gym.make(args.env_name)
     env_test = gym.make(args.env_name)
-
+    clf = K_Means(args.knum)
+    clf_r = K_Means(args.knum)
     # Set random seed
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -310,7 +351,7 @@ def main(args=None):
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    train(args, env_sampler, env_sampler_test, predict_env, agent, env_pool, model_pool, logger)
+    train(args, env_sampler, env_sampler_test, predict_env, agent, env_pool, model_pool, logger, clf, clf_r)
 
 
 if __name__ == '__main__':
