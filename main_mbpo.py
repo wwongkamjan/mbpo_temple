@@ -11,7 +11,7 @@ import logging
 import os
 import os.path as osp
 import json
-from .kmeans import K_Means
+from kmeans import K_Means
 from sac.replay_memory import ReplayMemory
 from sac.sac import SAC
 from model import EnsembleDynamicsModel
