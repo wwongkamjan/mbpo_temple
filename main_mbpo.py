@@ -184,7 +184,7 @@ def train_predict_model(args, env_pool, predict_env, clf, clf_r,fitted):
     inputs = np.concatenate((state, action), axis=-1)
     if args.temple:
         # check if cluster is stable, if stable then ok to train model with its member, (oppositely we fit kmean with any new data!)
-        if args.cluster_theshold:
+        if args.cluster_threshold:
             cls_labels = clf.predict(delta_state)
             stable_cluster = clf.mem_number[clf.mem_number > args.cluster_threshold]
             inputs = [inputs[x] for x in range(len(cls_labels)) if cls_labels[x] in stable_cluster]
