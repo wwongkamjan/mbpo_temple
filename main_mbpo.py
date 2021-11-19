@@ -99,9 +99,10 @@ def readParser():
     parser.add_argument('--cuda', default=True, action="store_true",
                         help='run on CUDA (default: True)')
 
-    parser.add_argument('--exp_log_name', default='exp_walker_0.txt')
+    parser.add_argument('--exp_log_name', default='')
     parser.add_argument('--exploration', type=bool, default=False)
     parser.add_argument('--temple',type=bool, default=False)
+    parser.add_argument('--cluster_threshold',type=int, default=0)
     parser.add_argument('--cl',type=bool, default=False)
     parser.add_argument('--knum', type=int, default=5)
     return parser.parse_args()
@@ -182,8 +183,20 @@ def train_predict_model(args, env_pool, predict_env, clf, clf_r,fitted):
     delta_state = next_state - state
     inputs = np.concatenate((state, action), axis=-1)
     if args.temple:
-        centered_delta, centered_r = fit_kmeans(delta_state, reward, clf, clf_r , fitted)
-        labels = np.concatenate((np.reshape(centered_r, (centered_r.shape[0], -1)), centered_delta), axis=-1)
+        # check if cluster is stable, if stable then ok to train model with its member, (oppositely we fit kmean with any new data!)
+        if args.cluster_theshold:
+            cls_labels = clf.predict(delta_state)
+            stable_cluster = clf.mem_number[clf.mem_number > args.cluster_threshold]
+            inputs = [inputs[x] for x in range(len(cls_labels)) if cls_labels[x] in stable_cluster]
+            centered_delta, centered_r = fit_kmeans(delta_state, reward, clf, clf_r , fitted)
+            delta_state = [delta_state[x] for x in range(len(cls_labels)) if cls_labels[x] in stable_cluster]
+            reward = [reward[x] for x in range(len(cls_labels)) if cls_labels[x] in stable_cluster]
+            centered_delta, centered_r = fit_kmeans(delta_state, reward, clf, clf_r , fitted)
+            labels = np.concatenate((np.reshape(centered_r, (centered_r.shape[0], -1)), centered_delta), axis=-1)
+        else:
+        # fit kmean with any data and train a model with any data
+            centered_delta, centered_r = fit_kmeans(delta_state, reward, clf, clf_r , fitted)
+            labels = np.concatenate((np.reshape(centered_r, (centered_r.shape[0], -1)), centered_delta), axis=-1)
     else:
         labels = np.concatenate((np.reshape(reward, (reward.shape[0], -1)), delta_state), axis=-1)
 
@@ -256,8 +269,7 @@ def fit_kmeans(delta, rewards, clf, clf_r, fitted):
         clf.update(delta, 0.1)
         clf_r.update(rewards, 0.1)
 
-    return pred_kmeans(delta, rewards)
-
+    return pred_kmeans(delta, rewards, clf, clf_r)
 
 def pred_kmeans(delta, rewards, clf, clf_r):
 
@@ -342,10 +354,17 @@ def main(args=None):
     # Sampler of environment
     env_sampler = EnvSampler(env)
     env_sampler_test = EnvSampler(env_test)
-
+    f_name = args.env_name 
+    if args.temple:
+        if args.cluster_threshold:
+            f_name += "temple" + args.knum + "cluster_threshold" + args.cluster_threshold
+        else:
+            f_name += "temple" + args.knum
+    
+    f_name += args.exp_log_name
     logger = logging.getLogger(__name__)
     logger.setLevel(level=logging.INFO)
-    handler = logging.FileHandler(args.exp_log_name)
+    handler = logging.FileHandler(f_name)
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
