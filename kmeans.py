@@ -72,6 +72,7 @@ class K_Means:
             else:
                 self.centroids[self.k] = featureset
                 self.classifications[self.k] = []
+                self.mem_number[self.k] = 1
                 self.classifications[self.k].append(featureset)
                 self.k = self.k + 1
 

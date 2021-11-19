@@ -361,7 +361,7 @@ def main(args=None):
         else:
             f_name += "temple" + str(args.knum)
     
-    f_name += args.exp_log_name
+    f_name += args.exp_log_name + ".txt"
     logger = logging.getLogger(__name__)
     logger.setLevel(level=logging.INFO)
     handler = logging.FileHandler(f_name)
