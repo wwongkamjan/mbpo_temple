@@ -357,9 +357,9 @@ def main(args=None):
     f_name = args.env_name 
     if args.temple:
         if args.cluster_threshold:
-            f_name += "temple" + args.knum + "cluster_threshold" + args.cluster_threshold
+            f_name += "temple" + str(args.knum) + "cluster_threshold" + str(args.cluster_threshold)
         else:
-            f_name += "temple" + args.knum
+            f_name += "temple" + str(args.knum)
     
     f_name += args.exp_log_name
     logger = logging.getLogger(__name__)
