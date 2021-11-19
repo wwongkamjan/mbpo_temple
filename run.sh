@@ -12,8 +12,7 @@
 module add cuda/11.1.1
 module load cudnn/v8.2.1
 
-srun bash -c "hostname; python3 main_mbpo.py --env_name 'Hopper-v2' --num_epoch 100 --temple True --model_type 'pytorch'"
-srun bash -c "hostname; python3 main_mbpo.py --env_name 'Walker2d-v2' --num_epoch 300 --model_type 'pytorch'"
+srun bash -c "hostname; python3 main_mbpo.py --env_name 'Hopper-v2' --num_epoch 100 --temple True --model_type 'pytorch' --exp_log_name Hopper-v2_temple.txt"
 # once the end of the batch script is reached your job allocation will be revoked
 
 

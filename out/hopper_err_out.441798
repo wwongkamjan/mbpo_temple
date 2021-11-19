@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "main_mbpo.py", line 14, in <module>
+    from .kmeans import K_Means
+ModuleNotFoundError: No module named '__main__.kmeans'; '__main__' is not a package
+srun: error: cml16: task 0: Exited with exit code 1
+Traceback (most recent call last):
+  File "main_mbpo.py", line 14, in <module>
+    from .kmeans import K_Means
+ModuleNotFoundError: No module named '__main__.kmeans'; '__main__' is not a package
+srun: error: cml16: task 0: Exited with exit code 1
