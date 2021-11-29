@@ -180,7 +180,8 @@ def train_predict_model(args, env_pool, predict_env, clf, clf_r,fitted):
     # else:
     #     state, action, reward, next_state, done = env_pool.sample(len(env_pool))
     # Get all samples from environment
-    state, action, reward, next_state, done = env_pool.sample(min(1000,len(env_pool)))
+    batch_sz = 256
+    state, action, reward, next_state, done = env_pool.sample(batch_sz)
     delta_state = next_state - state
     inputs = np.concatenate((state, action), axis=-1)
     if args.temple:
